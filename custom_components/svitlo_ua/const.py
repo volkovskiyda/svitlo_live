@@ -1,42 +1,23 @@
-"""Constants for Svitlo UA integration."""
+"""Константи для інтеграції «Світло»."""
 DOMAIN = "svitlo_ua"
-PLATFORMS = ["sensor", "binary_sensor", "calendar"]
 
-# Підтримувані регіони (відображаються в списку конфігурації)
-REGIONS = {
-    "Київ": "Kyiv",
-    "Київська область": "Kyiv region",
-    "Дніпропетровська область (Дніпро)": "Dnipropetrovsk",
-    "Львівська область": "Lviv",
-    "Харківська область": "Kharkiv",
-    "Одеська область": "Odesa",
-    "Миколаївська область": "Mykolaiv",
-    "Чернігівська область": "Chernihiv",
-    "Тернопільська область": "Ternopil",
-    "Вінницька область": "Vinnytsia"
-}
-# Примітка: Ключі наведені українською для зручності, значення – англійською (використовуються внутрішньо).
-
-# Регіони, де потрібно вибрати постачальника (кілька операторів)
-REGION_PROVIDERS = {
-    "Dnipropetrovsk": ["DTEK", "CEK"],  # Для Дніпропетровської обл. можливий DTEK або ЦЕК
-    # Інші регіони не потребують вибору постачальника
-}
-
-# Мапування регіонів та постачальників на джерело даних і необхідні коди
-YASNO_CITY_CODES = {
-    "Kyiv": "kiev",
-    "Dnipropetrovsk": "dnipro"  # використовується для DTEK (Ясно)
-}
-# Доменні імена субдоменів на energy-ua.info для регіонів
-ENERGY_UA_SUBDOMAINS = {
-    "Kyiv region": "kyiv",       # Kyiv та область на сайті Київ (адресний пошук)
-    "Lviv": "lviv",
-    "Kharkiv": "kharkiv",
-    "Odesa": "odesa",
-    "Mykolaiv": "mykolaiv",
-    "Chernihiv": "chernigiv",   # зверніть увагу: "chernigiv" латиницею
-    "Ternopil": "ternopil",
-    "Vinnytsia": "vinnytsia",
-    "Dnipropetrovsk": "dnipro"  # для ЦЕК (якщо вибрано)
+# Відповідність назвою регіона та API або URL джерела
+REGION_API_MAPPING = {
+    # Регіони Yasno:
+    "Київ": {"api": "yasno", "region_code": "kiev"},
+    "Дніпропетровська обл.": {"api": "yasno", "region_code": "dnipro"},
+    # Інші регіони Energy UA:
+    "Львівська обл.": {"api": "energy_ua", "region_code": "lviv"},
+    "Полтавська обл.": {"api": "energy_ua", "region_code": "poltava"},
+    "Харківська обл.": {"api": "energy_ua", "region_code": "kharkiv"},
+    "Чернігівська обл.": {"api": "energy_ua", "region_code": "chernigiv"},
+    "Запорізька обл.": {"api": "energy_ua", "region_code": "zap"},
+    "Закарпатська обл.": {"api": "energy_ua", "region_code": "zakarpat"},
+    "Тернопільська обл.": {"api": "energy_ua", "region_code": "ternopil"},
+    "Хмельницька обл.": {"api": "energy_ua", "region_code": "khmel"},
+    "Чернівецька обл.": {"api": "energy_ua", "region_code": "chernivtsi"},
+    "Сумська обл.": {"api": "energy_ua", "region_code": "sumy"},
+    "Рівненська обл.": {"api": "energy_ua", "region_code": "rivne"},
+    "Житомирська обл.": {"api": "energy_ua", "region_code": "zhytomyr"},
+    "Івано-Франківська обл.": {"api": "energy_ua", "region_code": "prykarpattya"}
 }
