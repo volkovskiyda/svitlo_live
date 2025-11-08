@@ -2,13 +2,17 @@ from homeassistant.const import Platform
 
 DOMAIN = "svitlo_live"
 
-PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
+PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.CALENDAR,
+]
 
+# Фіксований інтервал опитування (сек)
 DEFAULT_SCAN_INTERVAL = 900  # 15 хв
 
 CONF_REGION = "region"
 CONF_QUEUE = "queue"
-CONF_SCAN_INTERVAL = "scan_interval_seconds"
 
 # Оновлений список (Херсонська прибрана)
 REGIONS = {
@@ -39,25 +43,11 @@ REGIONS = {
 }
 
 # Мапа режимів вибору черги/групи
-# - DEFAULT: звичні "Черга 4.1", "4.2" ... (наш поточний випадок з підчергами)
-# - CHERGA_NUM: Вінницька — "Черга 1..6" (без підчерг)
-# - GRUPA_NUM: Чернівецька (1..12), Донецька (1..6) — "Група N"
 REGION_QUEUE_MODE = {
     "vinnitska-oblast": "CHERGA_NUM",
     "chernivetska-oblast": "GRUPA_NUM",
     "donetska-oblast": "GRUPA_NUM",
-    # інші — "DEFAULT"
 }
 
-# Класи з HTML
-CLASS_MAP = {
-    "on": "on",
-    "off": "off",
-    "f4": "off_first",   # 00–29 off, 30–59 on
-    "f5": "off_second",  # 00–29 on, 30–59 off
-}
-
-INTERVAL_LABEL_TO_SECONDS = {
-    "5 хв": 300, "10 хв": 600, "15 хв": 900, "30 хв": 1800,
-    "1 год": 3600, "2 год": 7200, "4 год": 14400, "6 год": 21600, "12 год": 43200,
-}
+# Публічний URL твого Cloudflare Worker (без секретів)
+API_URL = "https://svitlo-proxy.svitlo-proxy.workers.dev"
