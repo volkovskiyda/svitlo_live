@@ -1,5 +1,6 @@
 # 🟡 Svitlo.live
-ЧИТАТИ УКРАЇНСЬКОЮ
+[ЧИТАТИ УКРАЇНСЬКОЮ](https://github.com/chaichuk/svitlo_live/blob/main/readme.uk.md)
+
 An integration for **Home Assistant** that displays the current electricity supply status for your region and queue, based on data from [svitlo.live](https://svitlo.live).
 
 This is the **new version (v2.0.0)**, which now fully relies on the **official API** instead of HTML parsing.  
