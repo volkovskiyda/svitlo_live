@@ -129,6 +129,36 @@ action:
 | 🌍 **Localization** | Full Ukrainian and English translation support |
 
 ---
+## 🆕 What's New in v2.1.0
+## 🔔 Automated Notifications (Blueprint)
+
+The integration **automatically installs a blueprint** for daily electricity schedule notifications via push to your mobile devices.
+
+### Setup:
+
+1. Go to **Settings → Automations & Scenes**
+2. Click **Create Automation → Start with a blueprint**
+3. Select **"Svitlo Live: Power Schedule Notification"**
+4. Configure:
+   - 📅 **Svitlo Live Calendar** (automatically filtered to show only Svitlo Live calendars)
+   - ⏰ **Notification time** (default: 07:00)
+   - 📱 **Mobile devices** (select one or multiple devices)
+   - ✏️ **Custom message title** (optional)
+
+The blueprint will be available immediately after installing the integration via HACS!
+
+**Example notification:**
+```
+⚡Electricity Schedule
+
+📅 Schedule for today (09.11.2025):
+
+💡 04:00 - 07:30
+💡 09:00 - 11:00
+💡 14:30 - 18:00
+```
+
+---
 
 ## 💡 Author
 
