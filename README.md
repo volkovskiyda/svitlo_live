@@ -157,7 +157,14 @@ The blueprint will be available immediately after installing the integration via
 💡 09:00 - 11:00
 💡 14:30 - 18:00
 ```
+## ⚙️ New Functional Sensors (v2.2.0)
 
+This update introduces **two new live-updating sensors** that dynamically count down the time until the next scheduled event — without making any extra API requests.
+
+| Sensor | Description |
+|---------|--------------|
+| ⏳ **Minutes to grid connection** | Shows the number of minutes left until the **next power restoration**. Updates every 30 seconds. Visible only when the power is **off**. |
+| ⏱ **Minutes to outage** | Shows the number of minutes left until the **next power cut**. Updates every 30 seconds. Visible only when the power is **on**. |
 ---
 
 ## 💡 Author
