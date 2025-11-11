@@ -1,0 +1,164 @@
+blueprint:
+  name: "Svitlo Live: Сповіщення про оновлення графіків"
+  description: "Надсилає push коли оновлюється графіків відключення електропостачання сьогодні або завтра"
+  domain: automation
+  source_url: https://github.com/chaichuk/svitlo_live
+  input:
+    schedule_calendar:
+      name: Календар Svitlo Live
+      selector:
+        entity:
+          domain: calendar
+          integration: svitlo_live
+
+    schedule_updated_sensor:
+      name: Сенсор оновлення розкладу
+      description: "Оберіть sensor 'Schedule updated' для цього регіону (автоматично фільтрується)"
+      selector:
+        entity:
+          domain: sensor
+          integration: svitlo_live
+
+    mobile_targets:
+      name: Мобільні пристрої
+      default: []
+      selector:
+        device:
+          integration: mobile_app
+          multiple: true
+
+    title_text:
+      name: Заголовок
+      default: "⚠️ Оновлено графіки відключень електроенергії!"
+      selector:
+        text:
+
+    storage_helper:
+      name: Helper для збереження
+      description: "Виберіть Text helper для збереження стану цього календаря"
+      selector:
+        entity:
+          domain: input_text
+
+mode: restart
+
+variables:
+  cal_entity: !input schedule_calendar
+  mobile_targets: !input mobile_targets
+  title_text: !input title_text
+  storage_helper: !input storage_helper
+  # Витягуємо назву регіону та черги з entity_id календаря
+  region_queue: >-
+    {% set parts = cal_entity.split('_') %}
+    {% if parts | length >= 4 %}
+      {{ parts[1] | title }} {{ parts[2] | title }}, черга {{ parts[3:] | join('.') }}
+    {% else %}
+      {{ cal_entity.split('.')[1] | replace('_', ' ') | title }}
+    {% endif %}
+
+trigger:
+  - platform: state
+    entity_id: !input schedule_updated_sensor
+
+condition:
+  - condition: template
+    value_template: "{{ trigger.from_state.state not in ['unknown', 'unavailable'] }}"
+  - condition: time
+    after: "05:00:00"
+    before: "23:40:00"
+
+action:
+  # Отримуємо розклад на сьогодні та завтра
+  - service: calendar.get_events
+    target:
+      entity_id: !input schedule_calendar
+    data:
+      start_date_time: "{{ today_at('00:00').isoformat() }}"
+      end_date_time: "{{ (today_at('00:00') + timedelta(days=2) - timedelta(seconds=1)).isoformat() }}"
+    response_variable: cal_resp
+
+  - variables:
+      raw_events: >-
+        {% set r = cal_resp %}{% set k = cal_entity %}
+        {% if r is mapping and (k in r) and (r[k] is mapping) and ('events' in r[k]) %}
+          {{ r[k]['events'] | sort(attribute='start') }}
+        {% else %}[]{% endif %}
+
+      # Створюємо hash розкладу (повний формат)
+      schedule_signature: >-
+        {% set ns = namespace(sig='') %}
+        {% for e in raw_events %}
+          {% set ns.sig = ns.sig ~ e.start[9:15] ~ e.end[9:15] ~ '|' %}
+        {% endfor %}
+        {{ ns.sig | regex_replace('[T:]', '') }}
+
+      # Попередній hash
+      old_signature: "{{ states(storage_helper) | default('') }}"
+
+      # Чи змінилося?
+      changed: "{{ schedule_signature != old_signature }}"
+
+  - if:
+      - condition: template
+        value_template: "{{ changed }}"
+    then:
+      - variables:
+          events_today: >-
+            {% set today = now().date() %}
+            {{ raw_events | selectattr('start', 'search', today.isoformat()) | list }}
+
+          events_tomorrow: >-
+            {% set tomorrow = (now() + timedelta(days=1)).date() %}
+            {{ raw_events | selectattr('start', 'search', tomorrow.isoformat()) | list }}
+
+          body: >-
+            📍 {{ region_queue }}
+            
+            {% if events_today | length > 0 -%}
+            📅 СЬОГОДНІ ({{ now().strftime('%d.%m.%Y') }})
+            
+            {% for e in events_today -%}
+            {%- set s = as_datetime(e.start).astimezone(now().tzinfo) -%}
+            {%- set end = as_datetime(e.end).astimezone(now().tzinfo) -%}
+            ❌ {{ s.strftime('%H:%M') }} ━ {{ end.strftime('%H:%M') }}
+            
+            {% endfor -%}
+            {%- else %}
+            📅 СЬОГОДНІ ({{ now().strftime('%d.%m.%Y') }}):
+            
+            ⚡ Світло буде весь день! ⚡
+            {%- endif %}
+            
+            {% if events_tomorrow | length > 0 -%}
+            📅 ЗАВТРА ({{ (now() + timedelta(days=1)).strftime('%d.%m.%Y') }})
+            
+            {% for e in events_tomorrow -%}
+            {%- set s = as_datetime(e.start).astimezone(now().tzinfo) -%}
+            {%- set end = as_datetime(e.end).astimezone(now().tzinfo) -%}
+            ❌ {{ s.strftime('%H:%M') }} ━ {{ end.strftime('%H:%M') }}
+            
+            {% endfor -%}
+            {%- endif %}
+      - choose:
+          - conditions: "{{ mobile_targets | length > 0 }}"
+            sequence:
+              - repeat:
+                  for_each: !input mobile_targets
+                  sequence:
+                    - variables:
+                        svc: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | lower | replace(' ', '_') | replace('-', '_') }}"
+                    - service: "{{ svc }}"
+                      data:
+                        title: "{{ title_text }}"
+                        message: "{{ body }}"
+                        data:
+                          priority: high
+                          tag: svitlo_changed
+                          notification_icon: "mdi:calendar-alert"
+
+  # Зберігаємо hash
+  - service: input_text.set_value
+    target:
+      entity_id: !input storage_helper
+    data:
+      value: "{{ schedule_signature }}"
