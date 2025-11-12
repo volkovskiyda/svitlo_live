@@ -34,6 +34,12 @@ blueprint:
       selector:
         text:
 
+    location_name:
+      name: Локація
+      default: "Дім"
+      selector:
+        text:
+
     storage_helper:
       name: Helper для збереження
       description: "Виберіть Text helper для збереження стану цього календаря"
@@ -47,15 +53,8 @@ variables:
   cal_entity: !input schedule_calendar
   mobile_targets: !input mobile_targets
   title_text: !input title_text
+  location_name: !input location_name
   storage_helper: !input storage_helper
-
-  region_queue: >-
-    {% set parts = cal_entity.split('_') %}
-    {% if parts | length >= 4 %}
-      {{ parts[1] | replace('-', ' ') | title }} {{ parts[2] | replace('-', ' ') | title }}, черга {{ parts[3:] | join('.') }}
-    {% else %}
-      {{ cal_entity.split('.')[1] | replace('_', ' ') | title }}
-    {% endif %}
 
 trigger:
   - platform: state
@@ -96,28 +95,44 @@ action:
         {{ ("c=" ~ (raw_events|count|string) ~ ";" ~ ns.sig) | trim }}
 
       old_signature: "{{ states(storage_helper) | default('') }}"
-      changed: "{{ schedule_signature != old_signature and old_signature != '' }}"
+      changed: "{{ schedule_signature [-255:] != old_signature and old_signature != '' }}"
 
   - if:
       - condition: template
         value_template: "{{ changed }}"
     then:
       - variables:
-          today_iso: "{{ now().date().isoformat() }}"
-          tomorrow_iso: "{{ (now() + timedelta(days=1)).date().isoformat() }}"
+          events_today: >-
+            {% set today = now().astimezone(now().tzinfo).date() %}
+            {% set ns = namespace(events=[]) %}
+            {% for e in raw_events %}
+              {% if as_datetime(e.start).astimezone(now().tzinfo).date() == today %}
+                {% set ns.events = ns.events + [e] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.events }}
 
-          events_today: "{{ raw_events | selectattr('start', 'search', today_iso) | list }}"
-          events_tomorrow: "{{ raw_events | selectattr('start', 'search', tomorrow_iso) | list }}"
+          events_tomorrow: >-
+            {% set tomorrow = (now().astimezone(now().tzinfo) + timedelta(days=1)).date() %}
+            {% set ns = namespace(events=[]) %}
+            {% for e in raw_events %}
+              {% if as_datetime(e.start).astimezone(now().tzinfo).date() == tomorrow %}
+                {% set ns.events = ns.events + [e] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.events }}
 
           body: >-
-            📍 {{ region_queue }}
+            📍 {{ location_name }}
 
             {% if events_today | length > 0 -%}
             📅 СЬОГОДНІ ({{ now().strftime('%d.%m.%Y') }})
+            
             {% for e in events_today -%}
             {%- set s = as_datetime(e.start).astimezone(now().tzinfo) -%}
             {%- set end = as_datetime(e.end).astimezone(now().tzinfo) -%}
             ❌ {{ s.strftime('%H:%M') }} ━ {{ end.strftime('%H:%M') }}
+            
             {% endfor -%}
             {%- else -%}
             📅 СЬОГОДНІ ({{ now().strftime('%d.%m.%Y') }}): ⚡ світло без відключень
@@ -125,10 +140,12 @@ action:
 
             {% if events_tomorrow | length > 0 -%}
             📅 ЗАВТРА ({{ (now() + timedelta(days=1)).strftime('%d.%m.%Y') }})
+            
             {% for e in events_tomorrow -%}
             {%- set s2 = as_datetime(e.start).astimezone(now().tzinfo) -%}
             {%- set e2 = as_datetime(e.end).astimezone(now().tzinfo) -%}
             ❌ {{ s2.strftime('%H:%M') }} ━ {{ e2.strftime('%H:%M') }}
+            
             {% endfor -%}
             {%- endif %}
 
@@ -151,4 +168,4 @@ action:
     target:
       entity_id: !input storage_helper
     data:
-      value: "{{ schedule_signature[:255] }}"
+      value: "{{ schedule_signature[-255:] }}"
