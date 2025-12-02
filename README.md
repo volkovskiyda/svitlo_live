@@ -105,6 +105,7 @@ The quickest way to install this integration is via [HACS][hacs-url] by clicking
 
 [![Add to HACS via My Home Assistant][hacs-install-image]][hasc-install-url]
 
+### Manual installation:
 1. Open HACS → **Integrations → Custom repositories**.  
 2. Add this repository:
    ```
