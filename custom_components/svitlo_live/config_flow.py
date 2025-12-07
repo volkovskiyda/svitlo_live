@@ -25,7 +25,6 @@ def _queue_options_for_region(region_slug: str) -> Tuple[List[str], List[Dict[st
         values = [str(i) for i in range(1, 7)]
         default = "1"
     else:
-        # Стандартні черги N.M (1.1 ... 6.2) - Сюди потрапляє Дніпро (обидва оператори)
         values = [f"{i}.{j}" for i in range(1, 7) for j in (1, 2)]
         default = "1.1"
         
@@ -45,14 +44,13 @@ class SvitloConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._region_ui = user_input[CONF_REGION]
             slug = REGION_UI_TO_SLUG.get(self._region_ui, self._region_ui)
             
-            # Якщо вибрали м. Дніпро — йдемо вибирати оператора
             if slug == "dnipro-city":
                 return await self.async_step_operator()
             
             self._region_slug = slug
             return await self.async_step_details()
 
-        # Визначаємо дефолтний регіон (безпечно)
+        # дефолтний регіон
         default_region = "м. Київ" if "м. Київ" in REGION_UI_LIST else (REGION_UI_LIST[0] if REGION_UI_LIST else "")
         
         data_schema = vol.Schema({
@@ -66,14 +64,14 @@ class SvitloConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Крок вибору оператора для м. Дніпро."""
         if user_input is not None:
             operator = user_input[CONF_OPERATOR]
-            # Формуємо реальний slug на основі вибору
+            # slug на основі вибору
             if operator == "dnem":
                 self._region_slug = "dnipro-dnem"
             else:
                 self._region_slug = "dnipro-cek"
             return await self.async_step_details()
 
-        # Радіо-кнопки
+        # кнопки
         options = [
             {"label": "ДнЕМ (Дніпровські електромережі)", "value": "dnem"},
             {"label": "ЦЕК (Центральна енергетична компанія)", "value": "cek"}
@@ -100,7 +98,7 @@ class SvitloConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             queue = user_input[CONF_QUEUE]
             
-            # Формуємо красиву назву для інтеграції
+            # назви для інтеграції
             title_region = self._region_ui
             if self._region_slug == "dnipro-dnem":
                 title_region = "Дніпро (ДнЕМ)"
@@ -124,7 +122,7 @@ class SvitloConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             })
         })
         
-        # Динамічний текст для заголовка кроку
+        # Динамічний текст для заголовка
         desc_region = self._region_ui
         if self._region_slug == "dnipro-dnem":
             desc_region = "Дніпро (ДнЕМ)"
@@ -146,6 +144,4 @@ class SvitloOptionsFlow(config_entries.OptionsFlow):
         self.entry = entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
-        # В опціях спрощуємо - просто показуємо поточні дані, 
-        # бо зміна регіону вимагає повної переінсталяції ентіті
         return self.async_show_menu(step_id="init", menu_options=[])
